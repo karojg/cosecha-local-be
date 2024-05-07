@@ -1,22 +1,19 @@
-from typing import Union
-
-from fastapi import FastAPI
+from typing import List, Optional
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from enum import Enum
+from helpers import read_csv_as_dict
 
 app = FastAPI()
 
-class Item(BaseModel):
-    name: str
-    price: float
-    is_offer: Union[bool, None] = None
 
-
-class Products(str, Enum):
-    product = "rambutan"
-    price = "500"
-    unit = "kg"
-
+class Product(BaseModel):
+    id: int
+    semana: int
+    product: str
+    type: str
+    size: str
+    unit: str
+    price: int
 
 
 @app.get("/")
@@ -24,17 +21,17 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+# get product by id
+@app.get("/products/{product_id}")
+def get_product_by_id(product_id: int) -> Optional[Product]:
+    data = read_csv_as_dict()
+    for item in data:
+        if item.get("id") == product_id:
+            return Product(**item)
+    raise HTTPException(status_code=404, detail="Product not found")
 
 
-@app.put("/items/{item_id}")
-def update_item(item_id: int, item: Item):
-    return {"item_name": item.name, "item_id": item_id}
-
-
-@app.get("/products/{model_name}")
-async def get_model(model_name: Products):
-    if model_name is Products.product:
-        return {"product": model_name, "price": "500", "unit":"kg"}
+# get all products
+@app.get("/products/")
+def get_all_products() -> List[Product]:
+    return read_csv_as_dict()
