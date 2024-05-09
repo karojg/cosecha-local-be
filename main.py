@@ -79,7 +79,6 @@ async def extract_pdf_text():
                 # excludes header info
                 rows = table[3:]
                 # Correct headers if they are misaligned or missing
-                # TODO: rename headers
                 expected_headers = [
                     "Código",
                     "Productos",
@@ -89,9 +88,17 @@ async def extract_pdf_text():
                     "Precio compra",
                 ]
                 if headers != expected_headers:
-                    headers = (
-                        expected_headers  # Override with correct headers if necessary
-                    )
+                    # Create a mapping between expected headers and desired renamed headers
+                    header_mapping = {
+                        "Código": "id",
+                        "Productos": "name",
+                        "Tipo": "type",
+                        "Calidad/Tamaño": "quality",
+                        "Unidad de Venta": "unit",
+                        "Precio compra": "price",
+                    }
+                    # Rename headers using the mapping
+                    headers = [header_mapping.get(header, header) for header in expected_headers]
 
                 corrected_rows = [
                     dict(zip(headers, row)) for row in rows if len(row) == len(headers)
@@ -108,7 +115,7 @@ async def extract_pdf_text():
 def store_pdf_data(json_data, week_number):
     for obj in json_data:
         # Specify custom document ID
-        doc_id = obj["Código"]  # Assuming your data contains an "id" field for custom IDs
+        doc_id = obj["id"]  # Assuming your data contains an "id" field for custom IDs
         # Add the object as a document to Firestore with custom ID
         product_ref = db.collection('your_collection_nested').document(doc_id)
         week_ref = product_ref.collection('weeks').document(week_number)
